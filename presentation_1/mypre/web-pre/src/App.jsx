@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize, Github, Video, X, Link } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize, Code, Video, X, Link } from 'lucide-react';
 
 // --- 常量配置 ---
 const GRID_SIZE = 30; // 调大网格大小
@@ -215,11 +215,11 @@ for (let dy = -1; dy <= 1; dy++) {
       "致谢参考资料：B站 UP主 @Sli97"
     ],
     links: [
-      { text: "DEMO 开源地址", url: "https://github.com/Kevin23-design/AI-Fundamentals-2026-Spring", icon: Github },
+      { text: "DEMO 开源地址", url: "https://github.com/Kevin23-design/AI-Fundamentals-2026-Spring", icon: Code },
       { text: "参考视频：流场寻路算法如何实现", url: "https://www.bilibili.com/video/BV12bzZY2EfA", icon: Video },
       { text: "参考文章：Craig W. Reynolds (GDC 1999)", url: "https://www.red3d.com/cwr/steer/gdc99/", icon: Link },
       { text: "参考分享：GDC 2011 AI Navigation", url: "https://gdcvault.com/play/1014514/AI-Navigation-It-s-Not", icon: Video },
-      { text: "参考源码：《游戏人工智能编程案例精粹》", url: "https://gitee.com/sli97/steering-book", icon: Github }
+      { text: "参考源码：《游戏人工智能编程案例精粹》", url: "https://gitee.com/sli97/steering-book", icon: Code }
     ],
     visualMode: "flow_large"
   }
