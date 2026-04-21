@@ -154,6 +154,28 @@ for (const neighbor of units) {
   },
   {
     id: 9,
+    title: "深入交互：单位间避障",
+    subtitle: "Interactive Demo: Separation",
+    content: [
+      "演示场景：多个单位同时试图前往同一个中心目标点。",
+      "参数调节：通过右侧的滑块可以实时调节“单位间的排斥力大小”。",
+      "现象观察：斥力过小会导致单位重叠穿模；斥力适当则能形成均匀的包围圈；斥力过大甚至会导致单位发生剧烈弹射。"
+    ],
+    visualMode: "interactive_separation"
+  },
+  {
+    id: 10,
+    title: "深入交互：障碍物避障",
+    subtitle: "Interactive Demo: Obstacle Avoidance",
+    content: [
+      "演示场景：寻路单位试图穿过中间的圆形障碍物，前往右侧的绿色目标点。",
+      "参数调节：通过右侧的滑块可以实时调节“障碍物产生的排斥力大小”。",
+      "现象观察：排斥力能在单位撞上物理障碍前（红色虚线圈为感知范围）提前赋予其法向推力。通过调节斥力，你可以清晰地观察到单位是如何改变航向绕行的。"
+    ],
+    visualMode: "interactive_avoidance"
+  },
+  {
+    id: 11,
     title: "第三部分：力的应用与平滑避障",
     subtitle: "Step 3 & 4: Forces, Interpolation & Avoidance",
     content: [
@@ -164,7 +186,7 @@ for (const neighbor of units) {
     visualMode: "flow"
   },
   {
-    id: 10,
+    id: 12,
     title: "深入解析：修复角落卡死",
     subtitle: "Deep Dive: Diagonal Corner Cutting Trap",
     content: [
@@ -194,7 +216,7 @@ for (let dy = -1; dy <= 1; dy++) {
     visualMode: "corner_demo"
   },
   {
-    id: 11,
+    id: 13,
     title: "深入解析：时空复杂度对比",
     subtitle: "Deep Dive: Time & Space Complexity",
     content: [
@@ -206,7 +228,7 @@ for (let dy = -1; dy <= 1; dy++) {
     visualMode: "complexity_demo"
   },
   {
-    id: 12,
+    id: 14,
     title: "第四部分：最终成果与开源",
     subtitle: "Demo & Open Source",
     content: [
@@ -455,6 +477,16 @@ export default function App() {
   const canvasRef = useRef(null);
   const bfsProgressRef = useRef(0); // 新增：用于控制 BFS 生成动画进度
   
+  // 新增：交互场景控制参数
+  const [sepForce, setSepForce] = useState(40);
+  const [avoForce, setAvoForce] = useState(60);
+
+  // 存储独立物理演示的状态
+  const simState = useRef({
+      sepUnits: [],
+      avoUnits: []
+  });
+  
   // 算法状态
   const flowField = useMemo(() => new FlowField(COLS, ROWS), []);
 
@@ -490,11 +522,32 @@ export default function App() {
     bfsProgressRef.current = 0; // 翻页时重置 BFS 动画进度
 
     // --- 新增：动态控制卡死修复开关 ---
-    // 前9页（索引0-8）保留原始Bug以便演示，第10页（索引9，即解析页面）及以后开启修复
-    const shouldFix = currentSlide >= 9;
+    // 第12页（索引11，即解析页面）及以后开启修复
+    const shouldFix = currentSlide >= 11;
     if (flowField.enableCornerFix !== shouldFix) {
       flowField.enableCornerFix = shouldFix;
       flowField.calculate(); // 切换开关后，重新计算整张地图的向量场
+    }
+
+    // 初始化新加入的两个互动演示场景单位
+    if (SLIDES[currentSlide].visualMode === 'interactive_separation') {
+        const units = [];
+        for(let i=0; i<15; i++) {
+            units.push({
+                x: CANVAS_WIDTH/2 + (Math.random()*200 - 100),
+                y: CANVAS_HEIGHT/2 + (Math.random()*200 - 100),
+                vx: 0, vy: 0
+            });
+        }
+        simState.current.sepUnits = units;
+    } else if (SLIDES[currentSlide].visualMode === 'interactive_avoidance') {
+        simState.current.avoUnits = [
+            {x: 60, y: CANVAS_HEIGHT/2, vx: 2, vy: 0},
+            {x: 40, y: CANVAS_HEIGHT/2 - 25, vx: 2, vy: 0},
+            {x: 40, y: CANVAS_HEIGHT/2 + 25, vx: 2, vy: 0},
+            {x: 20, y: CANVAS_HEIGHT/2 - 10, vx: 2, vy: 0},
+            {x: 20, y: CANVAS_HEIGHT/2 + 10, vx: 2, vy: 0}
+        ];
     }
 
     particles.forEach(p => {
@@ -680,6 +733,132 @@ export default function App() {
            ctx.beginPath(); ctx.arc(cx + totalForceX, cy + totalForceY, 4, 0, Math.PI*2); ctx.fill();
            ctx.font = '14px Arial'; ctx.fillText('排斥合力', cx + totalForceX + 10, cy + totalForceY);
         }
+
+      } else if (visualMode === 'interactive_separation') {
+        // === 新增：可滑块调节的交互分离场景 ===
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        const cx = CANVAS_WIDTH / 2;
+        const cy = CANVAS_HEIGHT / 2;
+
+        // 绘制中心目标点
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+        ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI*2); ctx.fill();
+
+        simState.current.sepUnits.forEach(u => {
+           // 1. 驶向中心的基本转向力
+           const dx = cx - u.x; const dy = cy - u.y;
+           const d = Math.sqrt(dx*dx + dy*dy) || 1;
+           let steerX = (dx/d) * 2.0; let steerY = (dy/d) * 2.0;
+
+           // 2. 动态调节的分离斥力
+           let localSepX = 0, localSepY = 0;
+           simState.current.sepUnits.forEach(other => {
+               if (u !== other) {
+                   const odx = u.x - other.x; const ody = u.y - other.y;
+                   const od = Math.sqrt(odx*odx + ody*ody);
+                   if (od > 0 && od < 50) { // 碰撞/感知半径为50
+                       // 斥力大小与滑块参数 sepForce 直接挂钩，且距离越近力越大
+                       const force = (sepForce / 20) * ((50 - od) / 50);
+                       localSepX += (odx/od) * force;
+                       localSepY += (ody/od) * force;
+                       
+                       // 距离极近时绘制红线以展示力的作用
+                       if (od < 25 && sepForce > 0) {
+                           ctx.strokeStyle = `rgba(239, 68, 68, ${Math.min(1, force * 0.3)})`;
+                           ctx.lineWidth = 1;
+                           ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(other.x, other.y); ctx.stroke();
+                       }
+                   }
+               }
+           });
+
+           // 融合力场并更新速度
+           u.vx = u.vx * 0.85 + steerX * 0.15 + localSepX * 0.2;
+           u.vy = u.vy * 0.85 + steerY * 0.15 + localSepY * 0.2;
+
+           const speed = Math.sqrt(u.vx*u.vx + u.vy*u.vy);
+           if (speed > 3.5) { u.vx = (u.vx/speed)*3.5; u.vy = (u.vy/speed)*3.5; }
+
+           u.x += u.vx; u.y += u.vy;
+
+           // 绘制单位
+           ctx.fillStyle = '#3b82f6';
+           ctx.beginPath(); ctx.arc(u.x, u.y, 8, 0, Math.PI*2); ctx.fill();
+        });
+
+      } else if (visualMode === 'interactive_avoidance') {
+        // === 新增：可滑块调节的交互避障场景 ===
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        const cx = CANVAS_WIDTH / 2;
+        const cy = CANVAS_HEIGHT / 2;
+        const obsR = 45;
+        const targetX = CANVAS_WIDTH - 80;
+        const targetY = cy;
+
+        // 绘制终点
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+        ctx.beginPath(); ctx.arc(targetX, targetY, 20, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath(); ctx.arc(targetX, targetY, 6, 0, Math.PI*2); ctx.fill();
+
+        // 绘制中心障碍物
+        ctx.fillStyle = '#334155';
+        ctx.beginPath(); ctx.arc(cx, cy, obsR, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(cx, cy, obsR, 0, Math.PI*2); ctx.stroke();
+
+        // 绘制障碍物的“感知/避障圈” (红色虚线)
+        const avoidRadius = obsR + 60;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+        ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, avoidRadius, 0, Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+
+        simState.current.avoUnits.forEach(u => {
+           // 若到达目标点或跑出屏幕，则重置回起点循环演示
+           if (Math.sqrt((u.x-targetX)**2 + (u.y-targetY)**2) < 25 || u.x > CANVAS_WIDTH - 20) {
+               u.x = 60; u.y = cy + (Math.random()*60-30); u.vx=2; u.vy=0;
+           }
+
+           // 1. 驶向目标的向量
+           const dx = targetX - u.x; const dy = targetY - u.y;
+           const d = Math.sqrt(dx*dx + dy*dy) || 1;
+           let steerX = (dx/d) * 2.5; let steerY = (dy/d) * 2.5;
+
+           // 2. 动态调节的障碍物排斥力
+           let localAvoX = 0, localAvoY = 0;
+           const odx = u.x - cx; const ody = u.y - cy;
+           const od = Math.sqrt(odx*odx + ody*ody);
+
+           if (od < avoidRadius) {
+               // 依据距离衰减，并且直接由 avoForce 决定强度
+               const force = (avoForce / 15) * ((avoidRadius - od) / avoidRadius);
+               localAvoX = (odx/od) * force;
+               localAvoY = (ody/od) * force;
+
+               // 可视化出从障碍物给予单位的法向斥力
+               ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
+               ctx.lineWidth = 2;
+               ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(u.x + localAvoX*10, u.y + localAvoY*10); ctx.stroke();
+           }
+
+           u.vx = u.vx * 0.95 + steerX * 0.05 + localAvoX * 0.1;
+           u.vy = u.vy * 0.95 + steerY * 0.05 + localAvoY * 0.1;
+
+           const speed = Math.sqrt(u.vx*u.vx + u.vy*u.vy);
+           if (speed > 3) { u.vx = (u.vx/speed)*3; u.vy = (u.vy/speed)*3; }
+
+           u.x += u.vx; u.y += u.vy;
+
+           ctx.fillStyle = '#3b82f6';
+           ctx.beginPath(); ctx.arc(u.x, u.y, 8, 0, Math.PI*2); ctx.fill();
+        });
 
       } else if (visualMode === 'corner_demo') {
         // --- 解决角落卡死 独立演示动画 ---
@@ -929,7 +1108,7 @@ export default function App() {
 
     render();
     return () => cancelAnimationFrame(animationId);
-  }, [currentSlide, flowField, particles, isPlaying]);
+  }, [currentSlide, flowField, particles, isPlaying, repulsionForce]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -999,12 +1178,26 @@ export default function App() {
             <div className="absolute top-4 right-6 flex items-center text-slate-400 text-sm bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
               <span className="mr-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Live Canvas Demo
-              {slide.visualMode !== 'problem' && !['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo'].includes(slide.visualMode) && " (点击地图任意处可改变终点)"}
-              {['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo'].includes(slide.visualMode) && " (核心原理图解演示)"}
+              {slide.visualMode !== 'problem' && !['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo', 'separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && " (点击地图任意处可改变终点)"}
+              {['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo', 'separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && " (核心原理图解演示)"}
             </div>
 
+            {/* 新增：斥力大小滑块（仅在特定互动页面显示） */}
+            {['separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && (
+              <div className="absolute top-16 right-6 flex items-center bg-slate-900 px-4 py-2 rounded-xl border border-slate-700 z-20 shadow-lg">
+                <span className="text-slate-300 text-sm mr-3 font-medium">斥力大小: {repulsionForce}</span>
+                <input 
+                  type="range" 
+                  min="0" max="150" 
+                  value={repulsionForce} 
+                  onChange={(e) => setRepulsionForce(Number(e.target.value))}
+                  className="w-32 accent-emerald-500"
+                />
+              </div>
+            )}
+
             {/* 新增：随机生成迷宫墙壁按钮 */}
-            {!['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo'].includes(slide.visualMode) && (
+            {!['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo', 'separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && (
                <div className="absolute top-4 left-6 z-10">
                  <button
                    onClick={(e) => {
@@ -1088,7 +1281,7 @@ export default function App() {
             </div>
             
             {/* 只在非特写页面显示地图图例 */}
-            {!['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo'].includes(slide.visualMode) && (
+            {!['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo', 'separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && (
               <div className="mt-6 flex space-x-6 text-sm text-slate-400">
                 <div className="flex items-center"><div className="w-4 h-4 bg-[#ef4444] rounded-full mr-2"></div>目标点 (Target)</div>
                 <div className="flex items-center"><div className="w-4 h-4 bg-[#334155] rounded mr-2"></div>障碍物 (Obstacles)</div>
