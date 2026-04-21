@@ -1108,7 +1108,7 @@ export default function App() {
 
     render();
     return () => cancelAnimationFrame(animationId);
-  }, [currentSlide, flowField, particles, isPlaying, repulsionForce]);
+  }, [currentSlide, flowField, particles, isPlaying, sepForce, avoForce]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -1182,17 +1182,41 @@ export default function App() {
               {['bilinear_demo', 'separation_demo', 'corner_demo', 'complexity_demo', 'separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && " (核心原理图解演示)"}
             </div>
 
-            {/* 新增：斥力大小滑块（仅在特定互动页面显示） */}
-            {['separation_interactive', 'avoidance_interactive'].includes(slide.visualMode) && (
-              <div className="absolute top-16 right-6 flex items-center bg-slate-900 px-4 py-2 rounded-xl border border-slate-700 z-20 shadow-lg">
-                <span className="text-slate-300 text-sm mr-3 font-medium">斥力大小: {repulsionForce}</span>
-                <input 
-                  type="range" 
-                  min="0" max="150" 
-                  value={repulsionForce} 
-                  onChange={(e) => setRepulsionForce(Number(e.target.value))}
-                  className="w-32 accent-emerald-500"
-                />
+            {/* 新增：分离避障交互滑块 */}
+            {slide.visualMode === 'interactive_separation' && (
+              <div className="absolute bottom-6 right-6 z-10 bg-slate-900/90 p-5 rounded-xl border border-slate-700 shadow-2xl backdrop-blur-sm w-72">
+                  <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-emerald-400 font-bold">单位间排斥力 (Separation)</span>
+                      <span className="text-sm text-slate-300 font-mono bg-slate-800 px-2 rounded">{sepForce}</span>
+                  </div>
+                  <input
+                      type="range" min="0" max="150" value={sepForce}
+                      onChange={(e) => setSepForce(Number(e.target.value))}
+                      className="w-full accent-emerald-500"
+                  />
+                  <div className="text-xs text-slate-500 mt-2 flex justify-between">
+                    <span>允许穿模</span>
+                    <span>剧烈排斥</span>
+                  </div>
+              </div>
+            )}
+
+            {/* 新增：障碍物避障交互滑块 */}
+            {slide.visualMode === 'interactive_avoidance' && (
+              <div className="absolute bottom-6 right-6 z-10 bg-slate-900/90 p-5 rounded-xl border border-slate-700 shadow-2xl backdrop-blur-sm w-72">
+                  <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-emerald-400 font-bold">避障排斥力 (Avoidance)</span>
+                      <span className="text-sm text-slate-300 font-mono bg-slate-800 px-2 rounded">{avoForce}</span>
+                  </div>
+                  <input
+                      type="range" min="0" max="150" value={avoForce}
+                      onChange={(e) => setAvoForce(Number(e.target.value))}
+                      className="w-full accent-emerald-500"
+                  />
+                  <div className="text-xs text-slate-500 mt-2 flex justify-between">
+                    <span>贴墙摩擦</span>
+                    <span>提前绕远</span>
+                  </div>
               </div>
             )}
 
