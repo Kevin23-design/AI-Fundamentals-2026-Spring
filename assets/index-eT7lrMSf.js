@@ -50,7 +50,25 @@ for (const neighbor of units) {
     separationForce.y += diff.y;
     count++;
   }
-}`,visualMode:`separation_demo`},{id:9,title:`深入交互：单位间避障`,subtitle:`Interactive Demo: Separation`,content:[`演示场景：多个单位同时试图前往同一个中心目标点。`,`参数调节：通过右侧的滑块可以实时调节“单位间的排斥力大小”。`,`现象观察：斥力过小会导致单位重叠穿模；斥力适当则能形成均匀的包围圈；斥力过大甚至会导致单位发生剧烈弹射。`],visualMode:`interactive_separation`},{id:10,title:`深入交互：障碍物避障`,subtitle:`Interactive Demo: Obstacle Avoidance`,content:[`演示场景：寻路单位试图穿过中间的圆形障碍物，前往右侧的绿色目标点。`,`参数调节：通过右侧的滑块可以实时调节“障碍物产生的排斥力大小”。`,`现象观察：排斥力能在单位撞上物理障碍前（红色虚线圈为感知范围）提前赋予其法向推力。通过调节斥力，你可以清晰地观察到单位是如何改变航向绕行的。`],visualMode:`interactive_avoidance`},{id:11,title:`第三部分：力的应用与平滑避障`,subtitle:`Step 3 & 4: Forces, Interpolation & Avoidance`,content:[`力的读取：单位移动时，直接读取所在网格的向量，获得移动推力。`,`双线性插值 (Bilinear Interpolation)：平滑网格边缘的受力，使移动更加自然。`,`分离避障 (Separation)：结合 Steering Behavior。为节省算力，只处理与周围“邻居”单位的分离避障，无需全局计算。`],visualMode:`flow`},{id:12,title:`深入解析：修复角落卡死`,subtitle:`Deep Dive: Diagonal Corner Cutting Trap`,content:[`问题现象：如右侧图解，当地图出现对角线交叉的障碍物时，群体寻路时常会卡死在夹角处不断震颤。`,`根本原因：寻路单元拥有物理碰撞体积，但在生成 8 方向向量场时，基础算法允许了不切实际的“对角线穿透”指引，导致力场与物理碰撞冲突。`,`改进算法：在生成向量场搜寻最低成本网格时，增加“相邻墙壁”判定。如果水平或垂直方向存在障碍物，则物理体积必定受阻，应直接剔除该对角线的通行许可。`,`👉 右侧演示：图解对角线防穿模拦截。此算法已应用至全局，后续寻路将不再出现卡死死角。`],code:`// 防止对角线穿模核心逻辑 (Vector Field 生成阶段)
+}`,visualMode:`separation_demo`},{id:9,title:`深入交互：单位间避障`,subtitle:`Interactive Demo: Separation`,content:[`演示场景：多个单位同时试图前往同一个中心目标点。`,`参数调节：通过右侧的滑块可以实时调节“单位间的排斥力大小”。`,`现象观察：斥力过小会导致单位重叠穿模；斥力适当则能形成均匀的包围圈；斥力过大甚至会导致单位发生剧烈弹射。`],code:`// 单位间分离 (Separation) 伪代码
+for each neighbor in nearby_units:
+  dist = distance(self, neighbor)
+  if dist < perception_radius:
+    // 距离越近，斥力越大 (反比关系)
+    force = separationStrength * (1 - dist / perception_radius)
+    direction = normalize(self.pos - neighbor.pos)
+    repulsion += direction * force
+
+self.velocity += repulsion`,visualMode:`interactive_separation`},{id:10,title:`深入交互：障碍物避障`,subtitle:`Interactive Demo: Obstacle Avoidance`,content:[`演示场景：寻路单位试图穿过中间的圆形障碍物，前往右侧的绿色目标点。`,`参数调节：通过右侧的滑块可以实时调节“障碍物产生的排斥力大小”。`,`现象观察：排斥力能在单位撞上物理障碍前（红色虚线圈为感知范围）提前赋予其法向推力。通过调节斥力，你可以清晰地观察到单位是如何改变航向绕行的。`],code:`// 障碍物避障 (Avoidance) 伪代码
+for each obstacle in obstacles:
+  dist = distance(self, obstacle.center)
+  safe_dist = obstacle.radius + perception_margin
+  if dist < safe_dist:
+    // 计算法向量：从障碍物中心指向单位
+    normal = normalize(self.pos - obstacle.center)
+    // 越靠近障碍物表面，斥力越强
+    force = avoidStrength * (1 - dist / safe_dist)
+    self.velocity += normal * force`,visualMode:`interactive_avoidance`},{id:11,title:`第三部分：力的应用与平滑避障`,subtitle:`Step 3 & 4: Forces, Interpolation & Avoidance`,content:[`力的读取：单位移动时，直接读取所在网格的向量，获得移动推力。`,`双线性插值 (Bilinear Interpolation)：平滑网格边缘的受力，使移动更加自然。`,`分离避障 (Separation)：结合 Steering Behavior。为节省算力，只处理与周围“邻居”单位的分离避障，无需全局计算。`],visualMode:`flow`},{id:12,title:`深入解析：修复角落卡死`,subtitle:`Deep Dive: Diagonal Corner Cutting Trap`,content:[`问题现象：如右侧图解，当地图出现对角线交叉的障碍物时，群体寻路时常会卡死在夹角处不断震颤。`,`根本原因：寻路单元拥有物理碰撞体积，但在生成 8 方向向量场时，基础算法允许了不切实际的“对角线穿透”指引，导致力场与物理碰撞冲突。`,`改进算法：在生成向量场搜寻最低成本网格时，增加“相邻墙壁”判定。如果水平或垂直方向存在障碍物，则物理体积必定受阻，应直接剔除该对角线的通行许可。`,`👉 右侧演示：图解对角线防穿模拦截。此算法已应用至全局，后续寻路将不再出现卡死死角。`],code:`// 防止对角线穿模核心逻辑 (Vector Field 生成阶段)
 for (let dy = -1; dy <= 1; dy++) {
   for (let dx = -1; dx <= 1; dx++) {
     if (dx === 0 && dy === 0) continue;
