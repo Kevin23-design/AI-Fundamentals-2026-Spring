@@ -32,6 +32,10 @@ Gemini Canvas 代码常引用一些现代库，必须手动安装到本地：
 *   **资源替换**：若 AI 生成了占位图，需替换为本地图片或真实 URL。
 *   **模块拆分**：如果代码量大，将各个“幻灯片”逻辑拆分成独立的 Component 文件夹。
 *   **样式注入**：确保 `index.css` 引入了 Tailwind 的三层指令。
+*   **本地运行**：启动开发服务器： 运行以下命令：
+    ```bash
+    npm run dev
+    ```
 
 #### 4. 针对 GitHub Pages 的关键配置 (Critical Configuration)
 这是最容易踩坑的一步，因为 GitHub Pages 默认部署在子路径（如 `username.github.io/repo-name/`）。

@@ -161,6 +161,16 @@ for (const neighbor of units) {
       "参数调节：通过右侧的滑块可以实时调节“单位间的排斥力大小”。",
       "现象观察：斥力过小会导致单位重叠穿模；斥力适当则能形成均匀的包围圈；斥力过大甚至会导致单位发生剧烈弹射。"
     ],
+    code: `// 单位间分离 (Separation) 伪代码
+for each neighbor in nearby_units:
+  dist = distance(self, neighbor)
+  if dist < perception_radius:
+    // 距离越近，斥力越大 (反比关系)
+    force = separationStrength * (1 - dist / perception_radius)
+    direction = normalize(self.pos - neighbor.pos)
+    repulsion += direction * force
+
+self.velocity += repulsion`,
     visualMode: "interactive_separation"
   },
   {
@@ -172,6 +182,16 @@ for (const neighbor of units) {
       "参数调节：通过右侧的滑块可以实时调节“障碍物产生的排斥力大小”。",
       "现象观察：排斥力能在单位撞上物理障碍前（红色虚线圈为感知范围）提前赋予其法向推力。通过调节斥力，你可以清晰地观察到单位是如何改变航向绕行的。"
     ],
+    code: `// 障碍物避障 (Avoidance) 伪代码
+for each obstacle in obstacles:
+  dist = distance(self, obstacle.center)
+  safe_dist = obstacle.radius + perception_margin
+  if dist < safe_dist:
+    // 计算法向量：从障碍物中心指向单位
+    normal = normalize(self.pos - obstacle.center)
+    // 越靠近障碍物表面，斥力越强
+    force = avoidStrength * (1 - dist / safe_dist)
+    self.velocity += normal * force`,
     visualMode: "interactive_avoidance"
   },
   {
