@@ -28,19 +28,21 @@
 - Router 使用 basename=/仓库名/
 - 或增加 404 回退到 index.html 方案
 
-## 4) Actions 构建失败
+## 4) 手动发布后页面未更新
 可能原因：
-- 工作流中的 working-directory 与项目实际路径不一致
-- lock 文件不存在却使用 npm ci
+- 浏览器缓存命中旧资源
+- gh-pages 分支未推送最新 dist 内容
+- 误把 dist 文件夹整体复制到了根目录（应复制 dist 内部文件）
 
 建议：
-- 若无 package-lock.json，先本地 npm install 并提交 lock 文件
-- 校正工作流中的路径到真实工程目录
+- 强制刷新页面（Ctrl+F5）或清理缓存后重试
+- 检查 gh-pages 分支最新提交时间是否更新
+- 确认分支根目录直接包含 index.html，而不是嵌套在 dist 下
 
 ## 5) 部署成功但访问 404
 可能原因：
-- 仓库 Settings > Pages 未设置为 GitHub Actions
+- 仓库 Settings > Pages 的 Source 或分支选择错误
 
 建议：
-- 手动进入仓库设置，确认 Source 为 GitHub Actions
-- 重新触发一次 workflow_dispatch
+- 手动进入仓库设置，确认 Source 为 Deploy from a branch
+- 分支选择 gh-pages，目录选择 /(root)

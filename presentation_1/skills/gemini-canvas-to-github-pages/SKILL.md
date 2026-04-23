@@ -1,6 +1,6 @@
 ---
 name: gemini-canvas-to-github-pages
-description: '将 Gemini Canvas 或 AI 生成的 React 单文件原型工程化为可在线访问的 GitHub Pages 项目。适用于“把 html/react 原型发布到 Pages”“Vite + React + Tailwind 迁移”“配置 Pages 自动部署”“开源复现指南”场景。'
+description: '将 Gemini Canvas 或 AI 生成的 React 单文件原型工程化为可在线访问的 GitHub Pages 项目。适用于“把 html/react 原型发布到 Pages”“Vite + React + Tailwind 迁移”“手动发布到 Pages”“开源复现指南”场景。'
 argument-hint: '仓库名、项目目录、是否使用自定义域名'
 user-invocable: true
 ---
@@ -10,7 +10,7 @@ user-invocable: true
 ## 适用场景
 - 你有一份 AI 生成的 React 代码（常见为单文件或伪 html），希望部署为公开网页。
 - 你希望把流程写成可复现文档，便于课程作业、开源仓库或团队协作。
-- 你需要稳定的自动化部署，而不是手工上传 dist 文件。
+- 你希望不用 workflow，采用纯手动发布方式，便于教学与复现。
 
 ## 输入与前提
 - 已有 GitHub 仓库。
@@ -20,7 +20,7 @@ user-invocable: true
 ## 标准产物
 - 前端工程目录（推荐 Vite + React）。
 - 正确配置的 base 路径。
-- GitHub Actions 部署工作流（发布到 Pages）。
+- 手动发布到 GitHub Pages 的分支与目录策略。
 - 可复用的排错文档与复现步骤。
 
 ## 执行流程
@@ -47,12 +47,16 @@ user-invocable: true
 - npm run dev：交互验证
 - npm run build：构建验证
 
-7. 配置自动部署。
-在 .github/workflows/deploy-pages.yml 写入 Pages 工作流。
-可直接使用模板 [deploy-pages.yml](./assets/deploy-pages.yml)。
+7. 手动发布静态产物。
+推荐使用 gh-pages 分支，避免污染主分支源码：
+- 在本地执行 npm run build，得到 dist 目录。
+- 新建并切换到 gh-pages 分支（若已存在则切换）。
+- 清空分支旧内容后，把 dist 里的文件拷贝到分支根目录。
+- 提交并推送 gh-pages 分支。
 
 8. 启用 Pages。
-在仓库 Settings > Pages 中将 Source 设置为 GitHub Actions。
+在仓库 Settings > Pages 中将 Source 设置为 Deploy from a branch。
+Branch 选择 gh-pages，Folder 选择 /(root)。
 
 9. 输出复现信息。
 在 README 或文档中记录：
@@ -63,8 +67,8 @@ user-invocable: true
 ## 质量检查清单
 - 构建通过（npm run build 成功）
 - 页面资源路径正确（刷新子路由不 404）
-- 仓库中已有 .github/workflows/deploy-pages.yml
-- Actions 执行成功并产生线上 URL
+- gh-pages 分支已包含 dist 产物
+- Pages 已选择 gh-pages /(root) 并可访问线上 URL
 
 ## 常见问题
 - Windows 本地可运行但线上资源丢失：通常是路径大小写或 base 配置错误。
