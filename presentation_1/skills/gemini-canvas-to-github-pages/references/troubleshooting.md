@@ -1,48 +1,48 @@
 # Troubleshooting
 
-## 1) 线上空白页
-可能原因：
-- vite.config.js 的 base 未设置为 /仓库名/
-- 依赖未安装完整
-- 源码中存在运行时报错
+## 1) Blank page online
+Possible causes:
+- `base` is not set to `/<repo-name>/` in `vite.config.js`
+- Missing dependencies
+- Runtime error in source code
 
-排查顺序：
-1. 本地执行 npm run build 确认可构建。
-2. 打开浏览器控制台查看首个报错。
-3. 确认静态资源请求路径包含仓库名。
+Suggested checks:
+1. Run `npm run build` locally.
+2. Open browser console and inspect the first error.
+3. Confirm static asset requests include repository subpath.
 
-## 2) 本地正常，Pages 样式丢失
-可能原因：
-- Tailwind 未注入到全局样式
-- import 路径大小写在 Linux 下不匹配
+## 2) Styles missing on Pages but fine locally
+Possible causes:
+- Tailwind directives are not included in global stylesheet
+- Import path case mismatch (Linux is case-sensitive)
 
-建议：
-- 检查 src/index.css 是否包含 tailwind 基础指令。
-- 对照实际文件名修复大小写。
+Suggestions:
+- Verify `src/index.css` contains Tailwind base directives.
+- Match import casing with actual file names.
 
-## 3) 刷新子页面 404
-可能原因：
-- 使用 BrowserRouter 但未配置 basename
+## 3) 404 on refresh for subpages
+Possible causes:
+- Using `BrowserRouter` without `basename`
 
-建议：
-- Router 使用 basename=/仓库名/
-- 或增加 404 回退到 index.html 方案
+Suggestions:
+- Configure router `basename=/<repo-name>/`
+- Or add a `404.html` fallback strategy to `index.html`
 
-## 4) 手动发布后页面未更新
-可能原因：
-- 浏览器缓存命中旧资源
-- gh-pages 分支未推送最新 dist 内容
-- 误把 dist 文件夹整体复制到了根目录（应复制 dist 内部文件）
+## 4) Site not updated after manual publish
+Possible causes:
+- Browser cache still serves old files
+- Latest `dist` content was not pushed to `gh-pages`
+- `dist` folder itself was copied to root (should copy files inside `dist`)
 
-建议：
-- 强制刷新页面（Ctrl+F5）或清理缓存后重试
-- 检查 gh-pages 分支最新提交时间是否更新
-- 确认分支根目录直接包含 index.html，而不是嵌套在 dist 下
+Suggestions:
+- Hard refresh (`Ctrl+F5`) or clear browser cache
+- Check latest commit timestamp on `gh-pages`
+- Ensure `index.html` is at branch root, not nested under `dist`
 
-## 5) 部署成功但访问 404
-可能原因：
-- 仓库 Settings > Pages 的 Source 或分支选择错误
+## 5) Deployment done but URL still 404
+Possible causes:
+- Wrong Pages source/branch/folder selection
 
-建议：
-- 手动进入仓库设置，确认 Source 为 Deploy from a branch
-- 分支选择 gh-pages，目录选择 /(root)
+Suggestions:
+- In Settings > Pages, set `Deploy from a branch`
+- Choose branch `gh-pages` and folder `/(root)`
