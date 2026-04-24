@@ -261,7 +261,7 @@ for (let dy = -1; dy <= 1; dy++) {
       { text: "参考视频：流场寻路算法如何实现", url: "https://www.bilibili.com/video/BV12bzZY2EfA", icon: Video },
       { text: "参考文章：Craig W. Reynolds (GDC 1999)", url: "https://www.red3d.com/cwr/steer/gdc99/", icon: Link },
       { text: "参考分享：GDC 2011 AI Navigation", url: "https://gdcvault.com/play/1014514/AI-Navigation-It-s-Not", icon: Video },
-      { text: "参考源码：《游戏人工智能编程案例精粹》", url: "https://gitee.com/sli97/steering-book", icon: Code }
+      { text: "参考源码：《游戏人工智能编程案例精粹》", url: "https://github.com/wangchen/Programming-Game-AI-by-Example-src", icon: Code }
     ],
     visualMode: "flow_large"
   }
